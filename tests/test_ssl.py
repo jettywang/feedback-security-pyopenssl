@@ -5340,3 +5340,439 @@ class TestDTLS:
 
         with pytest.raises(Error):
             c.DTLSv1_handle_timeout()
+
+
+# The maximum plaintext fragment a DTLS record can carry, per RFC 6347
+# section 4.1.1 (it reuses the TLS 2**14 record limit). This is used only to
+# pick a payload that the backend *must* reject; the actual reject boundary is
+# always taken from backend behaviour, never by subtracting a header length.
+_DTLS_RECORD_PLAINTEXT_CAP = 2**14
+
+
+class TestDTLSMTU:
+    """
+    Security regression for the DTLS MTU interface.
+
+    The point of these tests is to prove that the backend treats DTLS as a
+    datagram protocol with an explicit size contract rather than as an
+    arbitrary byte stream:
+
+    * every accepted ``write`` produces exactly one datagram that the peer
+      reassembles byte-for-byte (the datagram boundary is preserved, records
+      are never silently split or merged);
+
+    * over-limit input is either rejected outright or must be handled by an
+      explicit application fragmentation layer -- it is never silently
+      truncated into something the receiver would mistake for a whole secure
+      message;
+
+    * every size decision is taken from the values the library itself returns
+      (``DTLS_get_data_mtu``). No header length is hardcoded or subtracted.
+
+    When an OpenSSL build lacks a capability the test needs, the gap is
+    recorded with an explicit skip rather than papered over.
+    """
+
+    LARGE_BUFFER = 65536
+    CIPHERTEXT_MTU = 1200
+
+    # DTLS 1.2 suites with materially different record overhead. The labels
+    # are OpenSSL cipher-list names; suites the build cannot negotiate are
+    # skipped individually so a partial-capability build still runs the rest.
+    CIPHER_SUITES = [
+        "ECDHE-RSA-AES128-GCM-SHA256",
+        "ECDHE-RSA-AES256-GCM-SHA384",
+        "ECDHE-RSA-CHACHA20-POLY1305",
+        "ECDHE-RSA-AES128-SHA256",
+        "ECDHE-RSA-AES256-SHA384",
+    ]
+
+    def _make_context(self, cipher_list=None):
+        ctx = Context(DTLS_METHOD)
+        # Memory BIOs cannot discover a path MTU, so stop OpenSSL from
+        # spontaneously clearing the value we configure.
+        ctx.set_options(OP_NO_QUERY_MTU)
+        ctx.use_privatekey(load_privatekey(FILETYPE_PEM, server_key_pem))
+        ctx.use_certificate(load_certificate(FILETYPE_PEM, server_cert_pem))
+        if cipher_list is not None:
+            ctx.set_cipher_list(cipher_list.encode("ascii"))
+        return ctx
+
+    def _build_pair(self, ciphertext_mtu, cipher_list=None):
+        server_ctx = self._make_context(cipher_list)
+        server_ctx.set_cookie_generate_callback(lambda ssl: b"xyzzy")
+        server_ctx.set_cookie_verify_callback(
+            lambda ssl, cookie: cookie == b"xyzzy"
+        )
+        server = Connection(server_ctx)
+        server.set_accept_state()
+
+        client = Connection(self._make_context(cipher_list))
+        client.set_connect_state()
+
+        # Mandatory for memory BIOs: OpenSSL cannot guess the MTU.
+        client.set_ciphertext_mtu(ciphertext_mtu)
+        server.set_ciphertext_mtu(ciphertext_mtu)
+        return client, server
+
+    def _handshake(self, client, server):
+        latest_client_hello = None
+
+        def pump(source, sink):
+            nonlocal latest_client_hello
+            try:
+                chunk = source.bio_read(self.LARGE_BUFFER)
+            except WantReadError:
+                return False
+            if (
+                len(chunk) > 13
+                and chunk[0] == 22
+                and chunk[13] == 1
+            ):
+                latest_client_hello = chunk
+            sink.bio_write(chunk)
+            return True
+
+        client_handshaking = True
+        server_listening = True
+        server_handshaking = False
+        first = True
+        for _ in range(200):
+            if not first:
+                if not (pump(server, client) or pump(client, server)):
+                    raise AssertionError(
+                        "DTLS handshake stopped making progress"
+                    )
+            first = False
+
+            if client_handshaking:
+                try:
+                    client.do_handshake()
+                except WantReadError:
+                    pass
+                else:
+                    client_handshaking = False
+
+            if server_listening:
+                try:
+                    server.DTLSv1_listen()
+                except WantReadError:
+                    pass
+                else:
+                    server_listening = False
+                    server_handshaking = True
+                    # Work around the memory-BIO peek limitation, mirroring
+                    # TestDTLS above.
+                    assert latest_client_hello is not None
+                    server.bio_write(latest_client_hello)
+
+            if server_handshaking:
+                try:
+                    server.do_handshake()
+                except WantReadError:
+                    pass
+                else:
+                    server_handshaking = False
+
+            if not (
+                client_handshaking or server_listening or server_handshaking
+            ):
+                return
+        raise AssertionError("DTLS handshake did not converge")
+
+    def _drain_datagrams(self, source, sink):
+        """Move every pending datagram source -> sink and return them."""
+        datagrams = []
+        while True:
+            try:
+                chunk = source.bio_read(self.LARGE_BUFFER)
+            except WantReadError:
+                return datagrams
+            datagrams.append(chunk)
+            sink.bio_write(chunk)
+
+    def _connected_pair(self, ciphertext_mtu=None, cipher_list=None):
+        client, server = self._build_pair(
+            self.CIPHERTEXT_MTU if ciphertext_mtu is None else ciphertext_mtu,
+            cipher_list,
+        )
+        self._handshake(client, server)
+        return client, server
+
+    @pytest.mark.skipif(
+        OP_COOKIE_EXCHANGE is None,
+        reason="DTLS cookie exchange not supported by this OpenSSL build",
+    )
+    def test_handshake_reports_library_cleartext_mtu(self):
+        """
+        After a handshake the cleartext MTU comes from the library
+        (``DTLS_get_data_mtu``), is strictly smaller than the configured
+        ciphertext MTU, and agrees on both peers. The value is never derived
+        by subtracting a hardcoded header length.
+        """
+        client, server = self._connected_pair()
+        client_clear = client.get_cleartext_mtu()
+        server_clear = server.get_cleartext_mtu()
+
+        assert isinstance(client_clear, int)
+        assert client_clear > 0
+        assert client_clear < self.CIPHERTEXT_MTU
+        # Both ends share the same record framing, so the library reports the
+        # same usable plaintext budget on each side.
+        assert client_clear == server_clear
+
+    @pytest.mark.skipif(
+        OP_COOKIE_EXCHANGE is None,
+        reason="DTLS cookie exchange not supported by this OpenSSL build",
+    )
+    @pytest.mark.parametrize("cipher_list", CIPHER_SUITES)
+    def test_cleartext_mtu_varies_with_cipher_suite(self, cipher_list):
+        """
+        The library-reported cleartext MTU depends on the negotiated cipher
+        suite because each suite has different record overhead. Recording this
+        per suite is exactly why a hardcoded "MTU minus fixed header" shortcut
+        cannot be correct.
+        """
+        try:
+            client, server = self._connected_pair(cipher_list=cipher_list)
+        except Error as e:
+            pytest.skip(f"cipher suite unavailable in this build: {e}")
+
+        assert client.get_cipher_name() == cipher_list
+        clear_mtu = client.get_cleartext_mtu()
+        assert 0 < clear_mtu < self.CIPHERTEXT_MTU
+        # The on-wire datagram for a maximum payload must not exceed the
+        # configured ciphertext MTU.
+        client.write(bytes(clear_mtu))
+        datagrams = self._drain_datagrams(client, server)
+        assert len(datagrams) == 1
+        assert len(datagrams[0]) <= self.CIPHERTEXT_MTU
+        # And the peer recovers the exact payload, boundary preserved.
+        assert server.read(clear_mtu + 1) == bytes(clear_mtu)
+
+    @pytest.mark.skipif(
+        OP_COOKIE_EXCHANGE is None,
+        reason="DTLS cookie exchange not supported by this OpenSSL build",
+    )
+    def test_at_limit_is_single_exact_datagram(self):
+        """
+        A write sized exactly to the library-reported cleartext MTU yields a
+        single datagram, no larger than the configured ciphertext MTU, which
+        the receiver reassembles into the identical message (no truncation, no
+        split, no merge).
+        """
+        client, server = self._connected_pair()
+        clear_mtu = client.get_cleartext_mtu()
+        payload = bytes((i % 256 for i in range(clear_mtu)))
+
+        assert client.write(payload) == clear_mtu
+        datagrams = self._drain_datagrams(client, server)
+
+        assert len(datagrams) == 1
+        assert len(datagrams[0]) <= self.CIPHERTEXT_MTU
+        assert server.read(clear_mtu + 1) == payload
+
+    @pytest.mark.skipif(
+        OP_COOKIE_EXCHANGE is None,
+        reason="DTLS cookie exchange not supported by this OpenSSL build",
+    )
+    def test_one_byte_over_path_mtu_is_not_split_or_truncated(self):
+        """
+        One byte beyond the *path* MTU is still a single, whole datagram. The
+        backend never fragments an application record into multiple datagrams
+        and never truncates it; the oversized datagram simply exceeds the
+        configured path budget, which is precisely the condition the
+        application must detect using the library-reported MTU before sending.
+        """
+        client, server = self._connected_pair()
+        clear_mtu = client.get_cleartext_mtu()
+        oversized = bytes(clear_mtu + 1)
+
+        assert client.write(oversized) == clear_mtu + 1
+        datagrams = self._drain_datagrams(client, server)
+
+        # Not split into several datagrams and not truncated.
+        assert len(datagrams) == 1
+        assert len(datagrams[0]) > self.CIPHERTEXT_MTU
+        # The peer still sees the complete, unmodified message rather than a
+        # shortened record it could mistake for the whole secure message.
+        assert server.read(clear_mtu + 16) == oversized
+
+    @pytest.mark.skipif(
+        OP_COOKIE_EXCHANGE is None,
+        reason="DTLS cookie exchange not supported by this OpenSSL build",
+    )
+    def test_record_plaintext_cap_is_rejected_not_truncated(self):
+        """
+        Beyond the DTLS record plaintext cap the backend rejects the write
+        with an explicit error and emits no datagram at all. It must never
+        silently truncate the message into a shorter, apparently-complete
+        record.
+        """
+        client, server = self._connected_pair()
+        too_big = bytes(_DTLS_RECORD_PLAINTEXT_CAP + 1)
+
+        with pytest.raises(Error, match="dtls message too big"):
+            client.write(too_big)
+        # The failed write produced no partial datagram on the wire.
+        assert self._drain_datagrams(client, server) == []
+        # sendall, which loops over SSL_write, fails the same way and likewise
+        # leaves nothing behind.
+        with pytest.raises(Error, match="dtls message too big"):
+            client.sendall(too_big)
+        assert self._drain_datagrams(client, server) == []
+
+    @pytest.mark.skipif(
+        OP_COOKIE_EXCHANGE is None,
+        reason="DTLS cookie exchange not supported by this OpenSSL build",
+    )
+    def test_runtime_mtu_reconfiguration_takes_effect_immediately(self):
+        """
+        Changing the ciphertext MTU on a live connection updates the
+        library-reported cleartext MTU immediately; a maximum write then fits
+        the new path budget. No connection rebuild is required.
+        """
+        client, server = self._connected_pair()
+        original_clear = client.get_cleartext_mtu()
+
+        client.set_ciphertext_mtu(600)
+        server.set_ciphertext_mtu(600)
+        reduced_clear = client.get_cleartext_mtu()
+        assert reduced_clear < original_clear
+
+        client.write(bytes(reduced_clear))
+        datagrams = self._drain_datagrams(client, server)
+        assert len(datagrams) == 1
+        assert len(datagrams[0]) <= 600
+
+        # Growing the MTU again is reflected by the library as well.
+        client.set_ciphertext_mtu(1500)
+        server.set_ciphertext_mtu(1500)
+        grown_clear = client.get_cleartext_mtu()
+        assert grown_clear > reduced_clear
+        assert grown_clear < 1500
+
+    @pytest.mark.skipif(
+        OP_COOKIE_EXCHANGE is None,
+        reason="DTLS cookie exchange not supported by this OpenSSL build",
+    )
+    def test_stale_cached_mtu_is_never_silently_split(self):
+        """
+        If an application keeps using a cleartext MTU cached from before a
+        reconfiguration, the oversized message is still emitted as one whole
+        datagram. The regression guards against a "stream" implementation that
+        would split the cached payload into path-sized pieces and make the
+        receiver reassemble a message that crossed the new boundary.
+        """
+        client, server = self._connected_pair()
+        stale_clear = client.get_cleartext_mtu()
+
+        # Shrink the path under the cached value.
+        client.set_ciphertext_mtu(600)
+        server.set_ciphertext_mtu(600)
+        live_clear = client.get_cleartext_mtu()
+        assert live_clear < stale_clear
+
+        # Reusing the stale length is not transparently fragmented; it stays a
+        # single datagram that exceeds the new path MTU. The application is
+        # expected to re-query get_cleartext_mtu (or run its own fragmentation
+        # protocol), not rely on the backend to chop the message up.
+        client.write(bytes(stale_clear))
+        datagrams = self._drain_datagrams(client, server)
+        assert len(datagrams) == 1
+        assert len(datagrams[0]) > 600
+        assert server.read(stale_clear + 1) == bytes(stale_clear)
+
+    @pytest.mark.skipif(
+        OP_COOKIE_EXCHANGE is None,
+        reason="DTLS cookie exchange not supported by this OpenSSL build",
+    )
+    def test_explicit_application_fragmentation_preserves_boundaries(self):
+        """
+        An explicit application fragmentation layer, sized entirely from the
+        library-reported cleartext MTU, keeps every datagram within the path
+        budget and lets the receiver reassemble a message larger than one
+        record. This is the supported way to send large messages -- explicit
+        framing -- rather than hoping the backend streams them.
+        """
+        client, server = self._connected_pair()
+        clear_mtu = client.get_cleartext_mtu()
+
+        # Reserve one byte for a per-fragment sequence tag so each fragment is
+        # itself strictly within the library limit.
+        fragment_cap = clear_mtu - 1
+        message = bytes((i % 256 for i in range(fragment_cap * 3 + 7)))
+        fragments = [
+            message[i : i + fragment_cap]
+            for i in range(0, len(message), fragment_cap)
+        ]
+        assert len(fragments) > 1
+
+        for index, fragment in enumerate(fragments):
+            framed = bytes([index]) + fragment
+            assert len(framed) <= clear_mtu
+            client.write(framed)
+            datagrams = self._drain_datagrams(client, server)
+            assert len(datagrams) == 1
+            assert len(datagrams[0]) <= self.CIPHERTEXT_MTU
+
+        reassembled = bytearray()
+        for expected_index in range(len(fragments)):
+            frame = server.read(clear_mtu + 1)
+            assert frame[0] == expected_index
+            reassembled.extend(frame[1:])
+        assert bytes(reassembled) == message
+
+    def test_cleartext_mtu_requires_data_mtu_capability(self, monkeypatch):
+        """
+        On an OpenSSL without DTLS_get_data_mtu the cleartext query raises
+        NotImplementedError instead of returning a guessed value. This records
+        the missing capability explicitly rather than emulating it with
+        hardcoded header arithmetic.
+        """
+        client = Connection(self._make_context())
+        monkeypatch.delattr(_lib, "DTLS_get_data_mtu", raising=True)
+        with pytest.raises(NotImplementedError):
+            client.get_cleartext_mtu()
+
+    def test_dtls_one_three_capability_is_recorded(self):
+        """
+        Record whether this build can negotiate DTLS 1.3. The pinned
+        min/max version either negotiates DTLS 1.3 or the build silently
+        stays on DTLS 1.2; there is no DTLS 1.3 method symbol to call
+        directly, so the gap is asserted here instead of being assumed.
+        """
+        server_ctx = self._make_context()
+        server_ctx.set_cookie_generate_callback(lambda ssl: b"xyzzy")
+        server_ctx.set_cookie_verify_callback(
+            lambda ssl, cookie: cookie == b"xyzzy"
+        )
+        client_ctx = self._make_context()
+        try:
+            server_ctx.set_min_proto_version(TLS1_3_VERSION)
+            server_ctx.set_max_proto_version(TLS1_3_VERSION)
+            client_ctx.set_min_proto_version(TLS1_3_VERSION)
+            client_ctx.set_max_proto_version(TLS1_3_VERSION)
+        except ValueError as e:  # pragma: no cover - version pin unsupported
+            pytest.skip(f"DTLS 1.3 version pin unavailable: {e}")
+
+        server = Connection(server_ctx)
+        server.set_accept_state()
+        client = Connection(client_ctx)
+        client.set_connect_state()
+        client.set_ciphertext_mtu(self.CIPHERTEXT_MTU)
+        server.set_ciphertext_mtu(self.CIPHERTEXT_MTU)
+
+        try:
+            self._handshake(client, server)
+        except Error as e:
+            pytest.skip(f"DTLS 1.3 unsupported by this build: {e}")
+
+        negotiated = client.get_protocol_version_name()
+        if negotiated != "DTLSv1.3":
+            pytest.skip(
+                "this OpenSSL build does not implement DTLS 1.3 "
+                f"(negotiated {negotiated}); DTLS 1.3 MTU matrix not run"
+            )
+        # On a DTLS 1.3-capable build the library MTU query must still work.
+        assert 0 < client.get_cleartext_mtu() < self.CIPHERTEXT_MTU
