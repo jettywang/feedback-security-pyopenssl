@@ -23,6 +23,7 @@ Changes:
 
 - Fixed a race in which an exception raised by a verify, ALPN selection, OCSP, or DTLS cookie callback for one ``Connection`` could be raised on an unrelated ``Connection`` created from the same ``Context`` and used concurrently from another thread. Exceptions from these callbacks are now tracked per ``Connection``. Discovered and reported by SecDim Security Research.
 - Fixed exceptions raised by a verify callback registered with ``Connection.set_verify`` being swallowed instead of being propagated to the caller.
+- Added ``OpenSSL.keylog``, a per-connection, explicitly authorized layer over the context-wide TLS key log callback. Key logging stays off by default (``SSLKEYLOGFILE`` is never consulted), is enabled per connection via ``KeyLogAuthority.authorize`` with a caller-supplied sink, and can be revoked from any thread via ``KeyLogAuthority.revoke``, after which no new key line for that connection reaches the sink. Sink failures produce sanitized diagnostics that never contain key material.
 
 
 26.4.0 (2026-08-01)
