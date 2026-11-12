@@ -15,3 +15,4 @@ OpenSSL library. The following modules are defined:
 
    api/crypto
    api/ssl
+   api/alpn
