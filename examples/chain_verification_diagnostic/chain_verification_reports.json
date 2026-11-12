@@ -1,0 +1,1194 @@
+[
+  {
+    "scenario": "1. canonical order leaf -> intermediate, anchor present",
+    "report": {
+      "trust_store_name": "store-A {Root A}",
+      "status": "trusted",
+      "partial_chain_enabled": false,
+      "peer_message": {
+        "ordered": [
+          {
+            "wire_index": 0,
+            "descriptor": {
+              "fingerprint": "8a936572bdda46306a6b10706d252d39ca20aa45c66706b96e6cd62762beec83",
+              "common_name": "example.test",
+              "subject": "CN=example.test",
+              "issuer": "CN=Intermediate X",
+              "role": "end-entity",
+              "self_signed": false,
+              "is_ca": false
+            },
+            "duplicate_of": null,
+            "issuer_dn": "CN=Intermediate X",
+            "subject_dn": "CN=example.test"
+          },
+          {
+            "wire_index": 1,
+            "descriptor": {
+              "fingerprint": "6d73dc04e08498df4b8033199097cf8e03904efbbe4928bc6708988bbbb2c098",
+              "common_name": "Intermediate X",
+              "subject": "CN=Intermediate X",
+              "issuer": "CN=Root A",
+              "role": "intermediate-ca",
+              "self_signed": false,
+              "is_ca": true
+            },
+            "duplicate_of": null,
+            "issuer_dn": "CN=Root A",
+            "subject_dn": "CN=Intermediate X"
+          }
+        ],
+        "leaf_fingerprint": "8a936572bdda46306a6b10706d252d39ca20aa45c66706b96e6cd62762beec83",
+        "duplicate_fingerprints": [],
+        "embedded_self_signed_roots": [],
+        "order_matches_chain": true,
+        "order_notes": []
+      },
+      "trust_anchors": [
+        {
+          "fingerprint": "c8403346eee2b0df790f180f133e428c2a469b7db97ee324993c947f5afc6f4d",
+          "common_name": "Root A",
+          "subject": "CN=Root A",
+          "issuer": "CN=Root A",
+          "role": "self-signed-root",
+          "self_signed": true,
+          "is_ca": true
+        }
+      ],
+      "verified_chain": [
+        {
+          "depth": 0,
+          "source": "peer-supplied",
+          "descriptor": {
+            "fingerprint": "8a936572bdda46306a6b10706d252d39ca20aa45c66706b96e6cd62762beec83",
+            "common_name": "example.test",
+            "subject": "CN=example.test",
+            "issuer": "CN=Intermediate X",
+            "role": "end-entity",
+            "self_signed": false,
+            "is_ca": false
+          }
+        },
+        {
+          "depth": 1,
+          "source": "peer-supplied",
+          "descriptor": {
+            "fingerprint": "6d73dc04e08498df4b8033199097cf8e03904efbbe4928bc6708988bbbb2c098",
+            "common_name": "Intermediate X",
+            "subject": "CN=Intermediate X",
+            "issuer": "CN=Root A",
+            "role": "intermediate-ca",
+            "self_signed": false,
+            "is_ca": true
+          }
+        },
+        {
+          "depth": 2,
+          "source": "local-trust-anchor",
+          "descriptor": {
+            "fingerprint": "c8403346eee2b0df790f180f133e428c2a469b7db97ee324993c947f5afc6f4d",
+            "common_name": "Root A",
+            "subject": "CN=Root A",
+            "issuer": "CN=Root A",
+            "role": "self-signed-root",
+            "self_signed": true,
+            "is_ca": true
+          }
+        }
+      ],
+      "alternative_branches_not_adopted": [],
+      "failure": null,
+      "warnings": []
+    }
+  },
+  {
+    "scenario": "2. shuffled order (intermediate before leaf) still verifies",
+    "report": {
+      "trust_store_name": "store-A {Root A}",
+      "status": "trusted",
+      "partial_chain_enabled": false,
+      "peer_message": {
+        "ordered": [
+          {
+            "wire_index": 0,
+            "descriptor": {
+              "fingerprint": "6d73dc04e08498df4b8033199097cf8e03904efbbe4928bc6708988bbbb2c098",
+              "common_name": "Intermediate X",
+              "subject": "CN=Intermediate X",
+              "issuer": "CN=Root A",
+              "role": "intermediate-ca",
+              "self_signed": false,
+              "is_ca": true
+            },
+            "duplicate_of": null,
+            "issuer_dn": "CN=Root A",
+            "subject_dn": "CN=Intermediate X"
+          },
+          {
+            "wire_index": 1,
+            "descriptor": {
+              "fingerprint": "8a936572bdda46306a6b10706d252d39ca20aa45c66706b96e6cd62762beec83",
+              "common_name": "example.test",
+              "subject": "CN=example.test",
+              "issuer": "CN=Intermediate X",
+              "role": "end-entity",
+              "self_signed": false,
+              "is_ca": false
+            },
+            "duplicate_of": null,
+            "issuer_dn": "CN=Intermediate X",
+            "subject_dn": "CN=example.test"
+          }
+        ],
+        "leaf_fingerprint": "8a936572bdda46306a6b10706d252d39ca20aa45c66706b96e6cd62762beec83",
+        "duplicate_fingerprints": [],
+        "embedded_self_signed_roots": [],
+        "order_matches_chain": false,
+        "order_notes": [
+          "wire order does not follow leaf -> issuer; OpenSSL re-sorts the untrusted stack itself, but senders should emit leaf first"
+        ]
+      },
+      "trust_anchors": [
+        {
+          "fingerprint": "c8403346eee2b0df790f180f133e428c2a469b7db97ee324993c947f5afc6f4d",
+          "common_name": "Root A",
+          "subject": "CN=Root A",
+          "issuer": "CN=Root A",
+          "role": "self-signed-root",
+          "self_signed": true,
+          "is_ca": true
+        }
+      ],
+      "verified_chain": [
+        {
+          "depth": 0,
+          "source": "peer-supplied",
+          "descriptor": {
+            "fingerprint": "8a936572bdda46306a6b10706d252d39ca20aa45c66706b96e6cd62762beec83",
+            "common_name": "example.test",
+            "subject": "CN=example.test",
+            "issuer": "CN=Intermediate X",
+            "role": "end-entity",
+            "self_signed": false,
+            "is_ca": false
+          }
+        },
+        {
+          "depth": 1,
+          "source": "peer-supplied",
+          "descriptor": {
+            "fingerprint": "6d73dc04e08498df4b8033199097cf8e03904efbbe4928bc6708988bbbb2c098",
+            "common_name": "Intermediate X",
+            "subject": "CN=Intermediate X",
+            "issuer": "CN=Root A",
+            "role": "intermediate-ca",
+            "self_signed": false,
+            "is_ca": true
+          }
+        },
+        {
+          "depth": 2,
+          "source": "local-trust-anchor",
+          "descriptor": {
+            "fingerprint": "c8403346eee2b0df790f180f133e428c2a469b7db97ee324993c947f5afc6f4d",
+            "common_name": "Root A",
+            "subject": "CN=Root A",
+            "issuer": "CN=Root A",
+            "role": "self-signed-root",
+            "self_signed": true,
+            "is_ca": true
+          }
+        }
+      ],
+      "alternative_branches_not_adopted": [],
+      "failure": null,
+      "warnings": []
+    }
+  },
+  {
+    "scenario": "3. duplicated intermediate (identical certificate twice)",
+    "report": {
+      "trust_store_name": "store-A {Root A}",
+      "status": "trusted",
+      "partial_chain_enabled": false,
+      "peer_message": {
+        "ordered": [
+          {
+            "wire_index": 0,
+            "descriptor": {
+              "fingerprint": "8a936572bdda46306a6b10706d252d39ca20aa45c66706b96e6cd62762beec83",
+              "common_name": "example.test",
+              "subject": "CN=example.test",
+              "issuer": "CN=Intermediate X",
+              "role": "end-entity",
+              "self_signed": false,
+              "is_ca": false
+            },
+            "duplicate_of": null,
+            "issuer_dn": "CN=Intermediate X",
+            "subject_dn": "CN=example.test"
+          },
+          {
+            "wire_index": 1,
+            "descriptor": {
+              "fingerprint": "6d73dc04e08498df4b8033199097cf8e03904efbbe4928bc6708988bbbb2c098",
+              "common_name": "Intermediate X",
+              "subject": "CN=Intermediate X",
+              "issuer": "CN=Root A",
+              "role": "intermediate-ca",
+              "self_signed": false,
+              "is_ca": true
+            },
+            "duplicate_of": null,
+            "issuer_dn": "CN=Root A",
+            "subject_dn": "CN=Intermediate X"
+          },
+          {
+            "wire_index": 2,
+            "descriptor": {
+              "fingerprint": "6d73dc04e08498df4b8033199097cf8e03904efbbe4928bc6708988bbbb2c098",
+              "common_name": "Intermediate X",
+              "subject": "CN=Intermediate X",
+              "issuer": "CN=Root A",
+              "role": "intermediate-ca",
+              "self_signed": false,
+              "is_ca": true
+            },
+            "duplicate_of": 1,
+            "issuer_dn": "CN=Root A",
+            "subject_dn": "CN=Intermediate X"
+          }
+        ],
+        "leaf_fingerprint": "8a936572bdda46306a6b10706d252d39ca20aa45c66706b96e6cd62762beec83",
+        "duplicate_fingerprints": [
+          "6d73dc04e08498df4b8033199097cf8e03904efbbe4928bc6708988bbbb2c098"
+        ],
+        "embedded_self_signed_roots": [],
+        "order_matches_chain": false,
+        "order_notes": [
+          "wire order does not follow leaf -> issuer; OpenSSL re-sorts the untrusted stack itself, but senders should emit leaf first"
+        ]
+      },
+      "trust_anchors": [
+        {
+          "fingerprint": "c8403346eee2b0df790f180f133e428c2a469b7db97ee324993c947f5afc6f4d",
+          "common_name": "Root A",
+          "subject": "CN=Root A",
+          "issuer": "CN=Root A",
+          "role": "self-signed-root",
+          "self_signed": true,
+          "is_ca": true
+        }
+      ],
+      "verified_chain": [
+        {
+          "depth": 0,
+          "source": "peer-supplied",
+          "descriptor": {
+            "fingerprint": "8a936572bdda46306a6b10706d252d39ca20aa45c66706b96e6cd62762beec83",
+            "common_name": "example.test",
+            "subject": "CN=example.test",
+            "issuer": "CN=Intermediate X",
+            "role": "end-entity",
+            "self_signed": false,
+            "is_ca": false
+          }
+        },
+        {
+          "depth": 1,
+          "source": "peer-supplied",
+          "descriptor": {
+            "fingerprint": "6d73dc04e08498df4b8033199097cf8e03904efbbe4928bc6708988bbbb2c098",
+            "common_name": "Intermediate X",
+            "subject": "CN=Intermediate X",
+            "issuer": "CN=Root A",
+            "role": "intermediate-ca",
+            "self_signed": false,
+            "is_ca": true
+          }
+        },
+        {
+          "depth": 2,
+          "source": "local-trust-anchor",
+          "descriptor": {
+            "fingerprint": "c8403346eee2b0df790f180f133e428c2a469b7db97ee324993c947f5afc6f4d",
+            "common_name": "Root A",
+            "subject": "CN=Root A",
+            "issuer": "CN=Root A",
+            "role": "self-signed-root",
+            "self_signed": true,
+            "is_ca": true
+          }
+        }
+      ],
+      "alternative_branches_not_adopted": [],
+      "failure": null,
+      "warnings": []
+    }
+  },
+  {
+    "scenario": "4. SAME input under store-A -> Root A path, inter from peer",
+    "report": {
+      "trust_store_name": "store-A {Root A}",
+      "status": "trusted",
+      "partial_chain_enabled": false,
+      "peer_message": {
+        "ordered": [
+          {
+            "wire_index": 0,
+            "descriptor": {
+              "fingerprint": "8a936572bdda46306a6b10706d252d39ca20aa45c66706b96e6cd62762beec83",
+              "common_name": "example.test",
+              "subject": "CN=example.test",
+              "issuer": "CN=Intermediate X",
+              "role": "end-entity",
+              "self_signed": false,
+              "is_ca": false
+            },
+            "duplicate_of": null,
+            "issuer_dn": "CN=Intermediate X",
+            "subject_dn": "CN=example.test"
+          },
+          {
+            "wire_index": 1,
+            "descriptor": {
+              "fingerprint": "6d73dc04e08498df4b8033199097cf8e03904efbbe4928bc6708988bbbb2c098",
+              "common_name": "Intermediate X",
+              "subject": "CN=Intermediate X",
+              "issuer": "CN=Root A",
+              "role": "intermediate-ca",
+              "self_signed": false,
+              "is_ca": true
+            },
+            "duplicate_of": null,
+            "issuer_dn": "CN=Root A",
+            "subject_dn": "CN=Intermediate X"
+          },
+          {
+            "wire_index": 2,
+            "descriptor": {
+              "fingerprint": "b6b4bf4f075ce546149b8a896594e2211cb682705e8c0a84a54f72dc7816bbfd",
+              "common_name": "Intermediate X",
+              "subject": "CN=Intermediate X",
+              "issuer": "CN=Root B",
+              "role": "intermediate-ca",
+              "self_signed": false,
+              "is_ca": true
+            },
+            "duplicate_of": null,
+            "issuer_dn": "CN=Root B",
+            "subject_dn": "CN=Intermediate X"
+          }
+        ],
+        "leaf_fingerprint": "8a936572bdda46306a6b10706d252d39ca20aa45c66706b96e6cd62762beec83",
+        "duplicate_fingerprints": [],
+        "embedded_self_signed_roots": [],
+        "order_matches_chain": true,
+        "order_notes": [
+          "1 extra certificate(s) not needed for the issuer walk (cross-signed alternatives, duplicates or roots)"
+        ]
+      },
+      "trust_anchors": [
+        {
+          "fingerprint": "c8403346eee2b0df790f180f133e428c2a469b7db97ee324993c947f5afc6f4d",
+          "common_name": "Root A",
+          "subject": "CN=Root A",
+          "issuer": "CN=Root A",
+          "role": "self-signed-root",
+          "self_signed": true,
+          "is_ca": true
+        }
+      ],
+      "verified_chain": [
+        {
+          "depth": 0,
+          "source": "peer-supplied",
+          "descriptor": {
+            "fingerprint": "8a936572bdda46306a6b10706d252d39ca20aa45c66706b96e6cd62762beec83",
+            "common_name": "example.test",
+            "subject": "CN=example.test",
+            "issuer": "CN=Intermediate X",
+            "role": "end-entity",
+            "self_signed": false,
+            "is_ca": false
+          }
+        },
+        {
+          "depth": 1,
+          "source": "peer-supplied",
+          "descriptor": {
+            "fingerprint": "6d73dc04e08498df4b8033199097cf8e03904efbbe4928bc6708988bbbb2c098",
+            "common_name": "Intermediate X",
+            "subject": "CN=Intermediate X",
+            "issuer": "CN=Root A",
+            "role": "intermediate-ca",
+            "self_signed": false,
+            "is_ca": true
+          }
+        },
+        {
+          "depth": 2,
+          "source": "local-trust-anchor",
+          "descriptor": {
+            "fingerprint": "c8403346eee2b0df790f180f133e428c2a469b7db97ee324993c947f5afc6f4d",
+            "common_name": "Root A",
+            "subject": "CN=Root A",
+            "issuer": "CN=Root A",
+            "role": "self-signed-root",
+            "self_signed": true,
+            "is_ca": true
+          }
+        }
+      ],
+      "alternative_branches_not_adopted": [
+        {
+          "fingerprint": "b6b4bf4f075ce546149b8a896594e2211cb682705e8c0a84a54f72dc7816bbfd",
+          "common_name": "Intermediate X",
+          "subject": "CN=Intermediate X",
+          "issuer": "CN=Root B",
+          "role": "intermediate-ca",
+          "self_signed": false,
+          "is_ca": true
+        }
+      ],
+      "failure": null,
+      "warnings": []
+    }
+  },
+  {
+    "scenario": "5. SAME input under store-B -> Root B path, inter from store",
+    "report": {
+      "trust_store_name": "store-B {Inter X(B) + Root B}",
+      "status": "trusted",
+      "partial_chain_enabled": false,
+      "peer_message": {
+        "ordered": [
+          {
+            "wire_index": 0,
+            "descriptor": {
+              "fingerprint": "8a936572bdda46306a6b10706d252d39ca20aa45c66706b96e6cd62762beec83",
+              "common_name": "example.test",
+              "subject": "CN=example.test",
+              "issuer": "CN=Intermediate X",
+              "role": "end-entity",
+              "self_signed": false,
+              "is_ca": false
+            },
+            "duplicate_of": null,
+            "issuer_dn": "CN=Intermediate X",
+            "subject_dn": "CN=example.test"
+          },
+          {
+            "wire_index": 1,
+            "descriptor": {
+              "fingerprint": "6d73dc04e08498df4b8033199097cf8e03904efbbe4928bc6708988bbbb2c098",
+              "common_name": "Intermediate X",
+              "subject": "CN=Intermediate X",
+              "issuer": "CN=Root A",
+              "role": "intermediate-ca",
+              "self_signed": false,
+              "is_ca": true
+            },
+            "duplicate_of": null,
+            "issuer_dn": "CN=Root A",
+            "subject_dn": "CN=Intermediate X"
+          },
+          {
+            "wire_index": 2,
+            "descriptor": {
+              "fingerprint": "b6b4bf4f075ce546149b8a896594e2211cb682705e8c0a84a54f72dc7816bbfd",
+              "common_name": "Intermediate X",
+              "subject": "CN=Intermediate X",
+              "issuer": "CN=Root B",
+              "role": "intermediate-ca",
+              "self_signed": false,
+              "is_ca": true
+            },
+            "duplicate_of": null,
+            "issuer_dn": "CN=Root B",
+            "subject_dn": "CN=Intermediate X"
+          }
+        ],
+        "leaf_fingerprint": "8a936572bdda46306a6b10706d252d39ca20aa45c66706b96e6cd62762beec83",
+        "duplicate_fingerprints": [],
+        "embedded_self_signed_roots": [],
+        "order_matches_chain": true,
+        "order_notes": [
+          "1 extra certificate(s) not needed for the issuer walk (cross-signed alternatives, duplicates or roots)"
+        ]
+      },
+      "trust_anchors": [
+        {
+          "fingerprint": "b6b4bf4f075ce546149b8a896594e2211cb682705e8c0a84a54f72dc7816bbfd",
+          "common_name": "Intermediate X",
+          "subject": "CN=Intermediate X",
+          "issuer": "CN=Root B",
+          "role": "intermediate-ca",
+          "self_signed": false,
+          "is_ca": true
+        },
+        {
+          "fingerprint": "bca77b161f0e413fa5dd438c977f2f623c491028dcc8f2bfe1298cde8f435ca5",
+          "common_name": "Root B",
+          "subject": "CN=Root B",
+          "issuer": "CN=Root B",
+          "role": "self-signed-root",
+          "self_signed": true,
+          "is_ca": true
+        }
+      ],
+      "verified_chain": [
+        {
+          "depth": 0,
+          "source": "peer-supplied",
+          "descriptor": {
+            "fingerprint": "8a936572bdda46306a6b10706d252d39ca20aa45c66706b96e6cd62762beec83",
+            "common_name": "example.test",
+            "subject": "CN=example.test",
+            "issuer": "CN=Intermediate X",
+            "role": "end-entity",
+            "self_signed": false,
+            "is_ca": false
+          }
+        },
+        {
+          "depth": 1,
+          "source": "local-trust-anchor",
+          "descriptor": {
+            "fingerprint": "b6b4bf4f075ce546149b8a896594e2211cb682705e8c0a84a54f72dc7816bbfd",
+            "common_name": "Intermediate X",
+            "subject": "CN=Intermediate X",
+            "issuer": "CN=Root B",
+            "role": "intermediate-ca",
+            "self_signed": false,
+            "is_ca": true
+          }
+        },
+        {
+          "depth": 2,
+          "source": "local-trust-anchor",
+          "descriptor": {
+            "fingerprint": "bca77b161f0e413fa5dd438c977f2f623c491028dcc8f2bfe1298cde8f435ca5",
+            "common_name": "Root B",
+            "subject": "CN=Root B",
+            "issuer": "CN=Root B",
+            "role": "self-signed-root",
+            "self_signed": true,
+            "is_ca": true
+          }
+        }
+      ],
+      "alternative_branches_not_adopted": [
+        {
+          "fingerprint": "6d73dc04e08498df4b8033199097cf8e03904efbbe4928bc6708988bbbb2c098",
+          "common_name": "Intermediate X",
+          "subject": "CN=Intermediate X",
+          "issuer": "CN=Root A",
+          "role": "intermediate-ca",
+          "self_signed": false,
+          "is_ca": true
+        }
+      ],
+      "failure": null,
+      "warnings": []
+    }
+  },
+  {
+    "scenario": "6. missing intermediate, leaf only -> untrusted at depth 0",
+    "report": {
+      "trust_store_name": "store-A {Root A}",
+      "status": "untrusted",
+      "partial_chain_enabled": false,
+      "peer_message": {
+        "ordered": [
+          {
+            "wire_index": 0,
+            "descriptor": {
+              "fingerprint": "8a936572bdda46306a6b10706d252d39ca20aa45c66706b96e6cd62762beec83",
+              "common_name": "example.test",
+              "subject": "CN=example.test",
+              "issuer": "CN=Intermediate X",
+              "role": "end-entity",
+              "self_signed": false,
+              "is_ca": false
+            },
+            "duplicate_of": null,
+            "issuer_dn": "CN=Intermediate X",
+            "subject_dn": "CN=example.test"
+          }
+        ],
+        "leaf_fingerprint": "8a936572bdda46306a6b10706d252d39ca20aa45c66706b96e6cd62762beec83",
+        "duplicate_fingerprints": [],
+        "embedded_self_signed_roots": [],
+        "order_matches_chain": true,
+        "order_notes": []
+      },
+      "trust_anchors": [
+        {
+          "fingerprint": "c8403346eee2b0df790f180f133e428c2a469b7db97ee324993c947f5afc6f4d",
+          "common_name": "Root A",
+          "subject": "CN=Root A",
+          "issuer": "CN=Root A",
+          "role": "self-signed-root",
+          "self_signed": true,
+          "is_ca": true
+        }
+      ],
+      "verified_chain": [],
+      "alternative_branches_not_adopted": [],
+      "failure": {
+        "error_code": 20,
+        "error_code_name": "X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY",
+        "depth": 0,
+        "message": "unable to get local issuer certificate",
+        "failing_cert": {
+          "fingerprint": "8a936572bdda46306a6b10706d252d39ca20aa45c66706b96e6cd62762beec83",
+          "common_name": "example.test",
+          "subject": "CN=example.test",
+          "issuer": "CN=Intermediate X",
+          "role": "end-entity",
+          "self_signed": false,
+          "is_ca": false
+        },
+        "missing_issuer_for_subject": "CN=Intermediate X",
+        "terminates_at_untrusted_self_signed": false,
+        "note": "diagnostic only; no chain is marked trusted and no partial-trust state is produced"
+      },
+      "warnings": []
+    }
+  },
+  {
+    "scenario": "7. peer self-signed root, empty store -> never an anchor",
+    "report": {
+      "trust_store_name": "store-empty {no anchors}",
+      "status": "untrusted",
+      "partial_chain_enabled": false,
+      "peer_message": {
+        "ordered": [
+          {
+            "wire_index": 0,
+            "descriptor": {
+              "fingerprint": "8a936572bdda46306a6b10706d252d39ca20aa45c66706b96e6cd62762beec83",
+              "common_name": "example.test",
+              "subject": "CN=example.test",
+              "issuer": "CN=Intermediate X",
+              "role": "end-entity",
+              "self_signed": false,
+              "is_ca": false
+            },
+            "duplicate_of": null,
+            "issuer_dn": "CN=Intermediate X",
+            "subject_dn": "CN=example.test"
+          },
+          {
+            "wire_index": 1,
+            "descriptor": {
+              "fingerprint": "6d73dc04e08498df4b8033199097cf8e03904efbbe4928bc6708988bbbb2c098",
+              "common_name": "Intermediate X",
+              "subject": "CN=Intermediate X",
+              "issuer": "CN=Root A",
+              "role": "intermediate-ca",
+              "self_signed": false,
+              "is_ca": true
+            },
+            "duplicate_of": null,
+            "issuer_dn": "CN=Root A",
+            "subject_dn": "CN=Intermediate X"
+          },
+          {
+            "wire_index": 2,
+            "descriptor": {
+              "fingerprint": "c8403346eee2b0df790f180f133e428c2a469b7db97ee324993c947f5afc6f4d",
+              "common_name": "Root A",
+              "subject": "CN=Root A",
+              "issuer": "CN=Root A",
+              "role": "self-signed-root",
+              "self_signed": true,
+              "is_ca": true
+            },
+            "duplicate_of": null,
+            "issuer_dn": "CN=Root A",
+            "subject_dn": "CN=Root A"
+          }
+        ],
+        "leaf_fingerprint": "8a936572bdda46306a6b10706d252d39ca20aa45c66706b96e6cd62762beec83",
+        "duplicate_fingerprints": [],
+        "embedded_self_signed_roots": [
+          "c8403346eee2b0df790f180f133e428c2a469b7db97ee324993c947f5afc6f4d"
+        ],
+        "order_matches_chain": true,
+        "order_notes": []
+      },
+      "trust_anchors": [],
+      "verified_chain": [],
+      "alternative_branches_not_adopted": [],
+      "failure": {
+        "error_code": 19,
+        "error_code_name": "X509_V_ERR_SELF_SIGNED_CERT_IN_CHAIN",
+        "depth": 2,
+        "message": "self-signed certificate in certificate chain",
+        "failing_cert": {
+          "fingerprint": "c8403346eee2b0df790f180f133e428c2a469b7db97ee324993c947f5afc6f4d",
+          "common_name": "Root A",
+          "subject": "CN=Root A",
+          "issuer": "CN=Root A",
+          "role": "self-signed-root",
+          "self_signed": true,
+          "is_ca": true
+        },
+        "missing_issuer_for_subject": null,
+        "terminates_at_untrusted_self_signed": true,
+        "note": "diagnostic only; no chain is marked trusted and no partial-trust state is produced"
+      },
+      "warnings": [
+        "peer sent a self-signed root that is NOT in the trust store; it is treated as ordinary untrusted input"
+      ]
+    }
+  },
+  {
+    "scenario": "8. rogue self-signed root mixed into a chain that still verifies",
+    "report": {
+      "trust_store_name": "store-A {Root A}",
+      "status": "trusted",
+      "partial_chain_enabled": false,
+      "peer_message": {
+        "ordered": [
+          {
+            "wire_index": 0,
+            "descriptor": {
+              "fingerprint": "8a936572bdda46306a6b10706d252d39ca20aa45c66706b96e6cd62762beec83",
+              "common_name": "example.test",
+              "subject": "CN=example.test",
+              "issuer": "CN=Intermediate X",
+              "role": "end-entity",
+              "self_signed": false,
+              "is_ca": false
+            },
+            "duplicate_of": null,
+            "issuer_dn": "CN=Intermediate X",
+            "subject_dn": "CN=example.test"
+          },
+          {
+            "wire_index": 1,
+            "descriptor": {
+              "fingerprint": "6d73dc04e08498df4b8033199097cf8e03904efbbe4928bc6708988bbbb2c098",
+              "common_name": "Intermediate X",
+              "subject": "CN=Intermediate X",
+              "issuer": "CN=Root A",
+              "role": "intermediate-ca",
+              "self_signed": false,
+              "is_ca": true
+            },
+            "duplicate_of": null,
+            "issuer_dn": "CN=Root A",
+            "subject_dn": "CN=Intermediate X"
+          },
+          {
+            "wire_index": 2,
+            "descriptor": {
+              "fingerprint": "f41bbd471b44695dbc3bc1bcf3dd1883bd45f4ef3ca0b41857f5c0872f524a4c",
+              "common_name": "Rogue Root (untrusted)",
+              "subject": "CN=Rogue Root (untrusted)",
+              "issuer": "CN=Rogue Root (untrusted)",
+              "role": "self-signed-root",
+              "self_signed": true,
+              "is_ca": true
+            },
+            "duplicate_of": null,
+            "issuer_dn": "CN=Rogue Root (untrusted)",
+            "subject_dn": "CN=Rogue Root (untrusted)"
+          }
+        ],
+        "leaf_fingerprint": "8a936572bdda46306a6b10706d252d39ca20aa45c66706b96e6cd62762beec83",
+        "duplicate_fingerprints": [],
+        "embedded_self_signed_roots": [
+          "f41bbd471b44695dbc3bc1bcf3dd1883bd45f4ef3ca0b41857f5c0872f524a4c"
+        ],
+        "order_matches_chain": true,
+        "order_notes": [
+          "1 extra certificate(s) not needed for the issuer walk (cross-signed alternatives, duplicates or roots)"
+        ]
+      },
+      "trust_anchors": [
+        {
+          "fingerprint": "c8403346eee2b0df790f180f133e428c2a469b7db97ee324993c947f5afc6f4d",
+          "common_name": "Root A",
+          "subject": "CN=Root A",
+          "issuer": "CN=Root A",
+          "role": "self-signed-root",
+          "self_signed": true,
+          "is_ca": true
+        }
+      ],
+      "verified_chain": [
+        {
+          "depth": 0,
+          "source": "peer-supplied",
+          "descriptor": {
+            "fingerprint": "8a936572bdda46306a6b10706d252d39ca20aa45c66706b96e6cd62762beec83",
+            "common_name": "example.test",
+            "subject": "CN=example.test",
+            "issuer": "CN=Intermediate X",
+            "role": "end-entity",
+            "self_signed": false,
+            "is_ca": false
+          }
+        },
+        {
+          "depth": 1,
+          "source": "peer-supplied",
+          "descriptor": {
+            "fingerprint": "6d73dc04e08498df4b8033199097cf8e03904efbbe4928bc6708988bbbb2c098",
+            "common_name": "Intermediate X",
+            "subject": "CN=Intermediate X",
+            "issuer": "CN=Root A",
+            "role": "intermediate-ca",
+            "self_signed": false,
+            "is_ca": true
+          }
+        },
+        {
+          "depth": 2,
+          "source": "local-trust-anchor",
+          "descriptor": {
+            "fingerprint": "c8403346eee2b0df790f180f133e428c2a469b7db97ee324993c947f5afc6f4d",
+            "common_name": "Root A",
+            "subject": "CN=Root A",
+            "issuer": "CN=Root A",
+            "role": "self-signed-root",
+            "self_signed": true,
+            "is_ca": true
+          }
+        }
+      ],
+      "alternative_branches_not_adopted": [
+        {
+          "fingerprint": "f41bbd471b44695dbc3bc1bcf3dd1883bd45f4ef3ca0b41857f5c0872f524a4c",
+          "common_name": "Rogue Root (untrusted)",
+          "subject": "CN=Rogue Root (untrusted)",
+          "issuer": "CN=Rogue Root (untrusted)",
+          "role": "self-signed-root",
+          "self_signed": true,
+          "is_ca": true
+        }
+      ],
+      "failure": null,
+      "warnings": [
+        "peer sent a self-signed root that is NOT in the trust store; it is treated as ordinary untrusted input"
+      ]
+    }
+  },
+  {
+    "scenario": "9. expired leaf -> untrusted, failure at depth 0",
+    "report": {
+      "trust_store_name": "store-A {Root A}",
+      "status": "untrusted",
+      "partial_chain_enabled": false,
+      "peer_message": {
+        "ordered": [
+          {
+            "wire_index": 0,
+            "descriptor": {
+              "fingerprint": "88e0900c2d4d45293eb0ba06eddb9f805204e84c08b8040aa7543b1f08ab04c9",
+              "common_name": "expired.example.test",
+              "subject": "CN=expired.example.test",
+              "issuer": "CN=Intermediate X",
+              "role": "end-entity",
+              "self_signed": false,
+              "is_ca": false
+            },
+            "duplicate_of": null,
+            "issuer_dn": "CN=Intermediate X",
+            "subject_dn": "CN=expired.example.test"
+          },
+          {
+            "wire_index": 1,
+            "descriptor": {
+              "fingerprint": "6d73dc04e08498df4b8033199097cf8e03904efbbe4928bc6708988bbbb2c098",
+              "common_name": "Intermediate X",
+              "subject": "CN=Intermediate X",
+              "issuer": "CN=Root A",
+              "role": "intermediate-ca",
+              "self_signed": false,
+              "is_ca": true
+            },
+            "duplicate_of": null,
+            "issuer_dn": "CN=Root A",
+            "subject_dn": "CN=Intermediate X"
+          }
+        ],
+        "leaf_fingerprint": "88e0900c2d4d45293eb0ba06eddb9f805204e84c08b8040aa7543b1f08ab04c9",
+        "duplicate_fingerprints": [],
+        "embedded_self_signed_roots": [],
+        "order_matches_chain": true,
+        "order_notes": []
+      },
+      "trust_anchors": [
+        {
+          "fingerprint": "c8403346eee2b0df790f180f133e428c2a469b7db97ee324993c947f5afc6f4d",
+          "common_name": "Root A",
+          "subject": "CN=Root A",
+          "issuer": "CN=Root A",
+          "role": "self-signed-root",
+          "self_signed": true,
+          "is_ca": true
+        }
+      ],
+      "verified_chain": [],
+      "alternative_branches_not_adopted": [],
+      "failure": {
+        "error_code": 10,
+        "error_code_name": "X509_V_ERR_CERT_HAS_EXPIRED",
+        "depth": 0,
+        "message": "certificate has expired",
+        "failing_cert": {
+          "fingerprint": "88e0900c2d4d45293eb0ba06eddb9f805204e84c08b8040aa7543b1f08ab04c9",
+          "common_name": "expired.example.test",
+          "subject": "CN=expired.example.test",
+          "issuer": "CN=Intermediate X",
+          "role": "end-entity",
+          "self_signed": false,
+          "is_ca": false
+        },
+        "missing_issuer_for_subject": null,
+        "terminates_at_untrusted_self_signed": false,
+        "note": "diagnostic only; no chain is marked trusted and no partial-trust state is produced"
+      },
+      "warnings": []
+    }
+  },
+  {
+    "scenario": "10. root-only store, cross branch not locally resolvable -> diagnostic only, no backtracking, no partial trust",
+    "report": {
+      "trust_store_name": "store-B-root-only {Root B}",
+      "status": "untrusted",
+      "partial_chain_enabled": false,
+      "peer_message": {
+        "ordered": [
+          {
+            "wire_index": 0,
+            "descriptor": {
+              "fingerprint": "8a936572bdda46306a6b10706d252d39ca20aa45c66706b96e6cd62762beec83",
+              "common_name": "example.test",
+              "subject": "CN=example.test",
+              "issuer": "CN=Intermediate X",
+              "role": "end-entity",
+              "self_signed": false,
+              "is_ca": false
+            },
+            "duplicate_of": null,
+            "issuer_dn": "CN=Intermediate X",
+            "subject_dn": "CN=example.test"
+          },
+          {
+            "wire_index": 1,
+            "descriptor": {
+              "fingerprint": "6d73dc04e08498df4b8033199097cf8e03904efbbe4928bc6708988bbbb2c098",
+              "common_name": "Intermediate X",
+              "subject": "CN=Intermediate X",
+              "issuer": "CN=Root A",
+              "role": "intermediate-ca",
+              "self_signed": false,
+              "is_ca": true
+            },
+            "duplicate_of": null,
+            "issuer_dn": "CN=Root A",
+            "subject_dn": "CN=Intermediate X"
+          },
+          {
+            "wire_index": 2,
+            "descriptor": {
+              "fingerprint": "b6b4bf4f075ce546149b8a896594e2211cb682705e8c0a84a54f72dc7816bbfd",
+              "common_name": "Intermediate X",
+              "subject": "CN=Intermediate X",
+              "issuer": "CN=Root B",
+              "role": "intermediate-ca",
+              "self_signed": false,
+              "is_ca": true
+            },
+            "duplicate_of": null,
+            "issuer_dn": "CN=Root B",
+            "subject_dn": "CN=Intermediate X"
+          }
+        ],
+        "leaf_fingerprint": "8a936572bdda46306a6b10706d252d39ca20aa45c66706b96e6cd62762beec83",
+        "duplicate_fingerprints": [],
+        "embedded_self_signed_roots": [],
+        "order_matches_chain": true,
+        "order_notes": [
+          "1 extra certificate(s) not needed for the issuer walk (cross-signed alternatives, duplicates or roots)"
+        ]
+      },
+      "trust_anchors": [
+        {
+          "fingerprint": "bca77b161f0e413fa5dd438c977f2f623c491028dcc8f2bfe1298cde8f435ca5",
+          "common_name": "Root B",
+          "subject": "CN=Root B",
+          "issuer": "CN=Root B",
+          "role": "self-signed-root",
+          "self_signed": true,
+          "is_ca": true
+        }
+      ],
+      "verified_chain": [],
+      "alternative_branches_not_adopted": [],
+      "failure": {
+        "error_code": 20,
+        "error_code_name": "X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY",
+        "depth": 1,
+        "message": "unable to get local issuer certificate",
+        "failing_cert": {
+          "fingerprint": "6d73dc04e08498df4b8033199097cf8e03904efbbe4928bc6708988bbbb2c098",
+          "common_name": "Intermediate X",
+          "subject": "CN=Intermediate X",
+          "issuer": "CN=Root A",
+          "role": "intermediate-ca",
+          "self_signed": false,
+          "is_ca": true
+        },
+        "missing_issuer_for_subject": "CN=Root A",
+        "terminates_at_untrusted_self_signed": false,
+        "note": "diagnostic only; no chain is marked trusted and no partial-trust state is produced"
+      },
+      "warnings": []
+    }
+  },
+  {
+    "scenario": "11. both roots trusted: one adopted chain, other branch listed as not adopted",
+    "report": {
+      "trust_store_name": "store-AB {Root A + Root B}",
+      "status": "trusted",
+      "partial_chain_enabled": false,
+      "peer_message": {
+        "ordered": [
+          {
+            "wire_index": 0,
+            "descriptor": {
+              "fingerprint": "8a936572bdda46306a6b10706d252d39ca20aa45c66706b96e6cd62762beec83",
+              "common_name": "example.test",
+              "subject": "CN=example.test",
+              "issuer": "CN=Intermediate X",
+              "role": "end-entity",
+              "self_signed": false,
+              "is_ca": false
+            },
+            "duplicate_of": null,
+            "issuer_dn": "CN=Intermediate X",
+            "subject_dn": "CN=example.test"
+          },
+          {
+            "wire_index": 1,
+            "descriptor": {
+              "fingerprint": "6d73dc04e08498df4b8033199097cf8e03904efbbe4928bc6708988bbbb2c098",
+              "common_name": "Intermediate X",
+              "subject": "CN=Intermediate X",
+              "issuer": "CN=Root A",
+              "role": "intermediate-ca",
+              "self_signed": false,
+              "is_ca": true
+            },
+            "duplicate_of": null,
+            "issuer_dn": "CN=Root A",
+            "subject_dn": "CN=Intermediate X"
+          },
+          {
+            "wire_index": 2,
+            "descriptor": {
+              "fingerprint": "b6b4bf4f075ce546149b8a896594e2211cb682705e8c0a84a54f72dc7816bbfd",
+              "common_name": "Intermediate X",
+              "subject": "CN=Intermediate X",
+              "issuer": "CN=Root B",
+              "role": "intermediate-ca",
+              "self_signed": false,
+              "is_ca": true
+            },
+            "duplicate_of": null,
+            "issuer_dn": "CN=Root B",
+            "subject_dn": "CN=Intermediate X"
+          }
+        ],
+        "leaf_fingerprint": "8a936572bdda46306a6b10706d252d39ca20aa45c66706b96e6cd62762beec83",
+        "duplicate_fingerprints": [],
+        "embedded_self_signed_roots": [],
+        "order_matches_chain": true,
+        "order_notes": [
+          "1 extra certificate(s) not needed for the issuer walk (cross-signed alternatives, duplicates or roots)"
+        ]
+      },
+      "trust_anchors": [
+        {
+          "fingerprint": "c8403346eee2b0df790f180f133e428c2a469b7db97ee324993c947f5afc6f4d",
+          "common_name": "Root A",
+          "subject": "CN=Root A",
+          "issuer": "CN=Root A",
+          "role": "self-signed-root",
+          "self_signed": true,
+          "is_ca": true
+        },
+        {
+          "fingerprint": "bca77b161f0e413fa5dd438c977f2f623c491028dcc8f2bfe1298cde8f435ca5",
+          "common_name": "Root B",
+          "subject": "CN=Root B",
+          "issuer": "CN=Root B",
+          "role": "self-signed-root",
+          "self_signed": true,
+          "is_ca": true
+        }
+      ],
+      "verified_chain": [
+        {
+          "depth": 0,
+          "source": "peer-supplied",
+          "descriptor": {
+            "fingerprint": "8a936572bdda46306a6b10706d252d39ca20aa45c66706b96e6cd62762beec83",
+            "common_name": "example.test",
+            "subject": "CN=example.test",
+            "issuer": "CN=Intermediate X",
+            "role": "end-entity",
+            "self_signed": false,
+            "is_ca": false
+          }
+        },
+        {
+          "depth": 1,
+          "source": "peer-supplied",
+          "descriptor": {
+            "fingerprint": "6d73dc04e08498df4b8033199097cf8e03904efbbe4928bc6708988bbbb2c098",
+            "common_name": "Intermediate X",
+            "subject": "CN=Intermediate X",
+            "issuer": "CN=Root A",
+            "role": "intermediate-ca",
+            "self_signed": false,
+            "is_ca": true
+          }
+        },
+        {
+          "depth": 2,
+          "source": "local-trust-anchor",
+          "descriptor": {
+            "fingerprint": "c8403346eee2b0df790f180f133e428c2a469b7db97ee324993c947f5afc6f4d",
+            "common_name": "Root A",
+            "subject": "CN=Root A",
+            "issuer": "CN=Root A",
+            "role": "self-signed-root",
+            "self_signed": true,
+            "is_ca": true
+          }
+        }
+      ],
+      "alternative_branches_not_adopted": [
+        {
+          "fingerprint": "b6b4bf4f075ce546149b8a896594e2211cb682705e8c0a84a54f72dc7816bbfd",
+          "common_name": "Intermediate X",
+          "subject": "CN=Intermediate X",
+          "issuer": "CN=Root B",
+          "role": "intermediate-ca",
+          "self_signed": false,
+          "is_ca": true
+        }
+      ],
+      "failure": null,
+      "warnings": []
+    }
+  }
+]
